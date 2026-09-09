@@ -1,10 +1,11 @@
 {
-  "name": "Tsubogawa Watch",
+  "name": "Tsubogawa Watch V2",
   "short_name": "Tsubogawa",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#eef6f9",
-  "theme_color": "#0b5f87",
+  "background_color": "#edf6f9",
+  "theme_color": "#075f86",
   "icons": [
     {
       "src": "icon-192.png",

@@ -1,233 +1,145 @@
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b5f87" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Tsubogawa" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="icon" href="icon-192.png" />
-  <title>Tsubogawa Watch</title>
-  <style>
-    :root{
-      --bg:#eef6f9; --card:#fff; --ink:#10212b; --muted:#667a86;
-      --blue:#0b5f87; --blue2:#1687b8; --green:#14854f; --yellow:#c48a00;
-      --orange:#d85c16; --red:#c92b2b; --border:#dbe8ee;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; background:linear-gradient(#dff1f8 0,#eef6f9 190px);
-      color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",
-      "Helvetica Neue",Arial,sans-serif; min-height:100vh;
-      padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-    }
-    .wrap{max-width:620px;margin:auto;padding:14px}
-    header{padding:8px 4px 12px}
-    h1{font-size:25px;margin:0 0 4px;font-weight:800}
-    .jp{font-size:14px;color:var(--muted)}
-    .card{
-      background:rgba(255,255,255,.97); border:1px solid var(--border);
-      box-shadow:0 7px 22px rgba(17,52,69,.08); border-radius:20px;
-      padding:16px; margin-bottom:13px;
-    }
-    .row{display:flex;justify-content:space-between;gap:12px;align-items:center}
-    .label{font-size:13px;color:var(--muted);font-weight:650}
-    .level{font-size:48px;line-height:1;font-weight:850;letter-spacing:-1.5px;margin:7px 0}
-    .level small{font-size:20px;letter-spacing:0}
-    .trend{font-size:27px;font-weight:800}
-    .updated{font-size:13px;color:var(--muted)}
-    .status{
-      display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 11px;
-      font-weight:750;font-size:13px;background:#eef2f4;margin-top:9px;
-    }
-    .dot{width:9px;height:9px;border-radius:50%;background:#82949c}
-    .camera{width:100%;border-radius:15px;display:block;background:#dfe8ec;min-height:170px;object-fit:cover}
-    .cam-meta{font-size:13px;color:var(--muted);margin-top:8px}
-    button,.button{
-      appearance:none;border:0;border-radius:14px;background:var(--blue);color:white;
-      padding:13px 16px;font-size:16px;font-weight:760;width:100%;text-align:center;
-      text-decoration:none;display:block;cursor:pointer;
-    }
-    .secondary{background:#e7f1f5;color:#14495f;margin-top:9px}
-    .thresholds{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-    .th{border:1px solid var(--border);border-radius:13px;padding:9px 10px;font-size:12px}
-    .th b{display:block;font-size:15px;margin-top:2px}
-    .note{font-size:12px;color:var(--muted);line-height:1.45;margin:8px 2px 0}
-    .error{color:#a73b2f;font-size:13px;line-height:1.4}
-    .install{display:none}
-    footer{text-align:center;color:var(--muted);font-size:11px;padding:6px 5px 18px}
-    @media (display-mode:standalone){.install{display:none!important}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#075f86">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tsubogawa">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Tsubogawa Watch V2</title>
+<style>
+:root{--bg:#edf6f9;--card:#fff;--ink:#112630;--muted:#667b86;--line:#d8e7ed;--blue:#075f86;--blue2:#0c83b6;--green:#168552;--yellow:#bd8500;--orange:#db601b;--red:#c82d2d}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(#d9f0f7 0,#edf6f9 230px);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);min-height:100vh}
+main{max-width:650px;margin:auto;padding:14px}
+header{padding:8px 3px 13px}.title{font-size:25px;font-weight:850}.sub{color:var(--muted);font-size:13px;margin-top:3px}
+.card{background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:20px;padding:15px;margin-bottom:13px;box-shadow:0 7px 22px rgba(17,57,74,.07)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.label{font-size:12px;letter-spacing:.35px;color:var(--muted);font-weight:750}.level{font-size:50px;line-height:1;font-weight:880;letter-spacing:-2px;margin:8px 0}.unit{font-size:20px;letter-spacing:0}.trend{font-size:30px;font-weight:850}.time{font-size:12px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:7px;margin-top:9px;padding:7px 11px;border-radius:999px;background:#eef2f4;font-size:13px;font-weight:760}.dot{width:9px;height:9px;border-radius:50%;background:#8a9aa2}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#eef4f6;border-radius:12px;padding:4px;margin:11px 0 7px}
+.tab{border:0;background:transparent;border-radius:9px;padding:9px 5px;font-weight:760;color:#48606c}.tab.active{background:#fff;color:var(--blue);box-shadow:0 1px 5px rgba(0,0,0,.08)}
+.chartbox{position:relative;width:100%;height:230px;touch-action:none;overflow:hidden}.chartbox svg{width:100%;height:100%;display:block}.tip{display:none;position:absolute;pointer-events:none;top:5px;left:8px;background:rgba(17,38,48,.92);color:#fff;border-radius:9px;padding:7px 9px;font-size:12px;line-height:1.35}
+.legend{font-size:11px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-top:5px}.legend span:before{content:"";display:inline-block;width:12px;height:2px;background:currentColor;vertical-align:middle;margin-right:4px}
+.camera-wrap{text-align:center;background:#e5eef2;border-radius:14px;padding:8px}.camera{display:block;max-width:320px;width:100%;height:auto;margin:auto;border-radius:9px;background:#dce5e9}.camnote{font-size:11px;color:var(--muted);line-height:1.4;margin-top:7px;text-align:left}
+button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue);color:#fff;font-size:15px;font-weight:770;width:100%;display:block;text-decoration:none;text-align:center;cursor:pointer}.secondary{background:#e7f1f5;color:#154d64;margin-top:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}.th{border:1px solid var(--line);border-radius:12px;padding:8px;font-size:11px;color:var(--muted)}.th b{display:block;color:var(--ink);font-size:14px;margin-top:2px}
+.warn{font-size:12px;color:#9e3f34;margin-top:7px}.small{font-size:11px;color:var(--muted);line-height:1.45;margin-top:7px}footer{text-align:center;color:var(--muted);font-size:10px;padding:4px 10px 17px}
+</style>
 </head>
-<body>
-<div class="wrap">
-  <header>
-    <h1>津保川 Tsubogawa Watch</h1>
-    <div class="jp">関市・岐阜県 — dùng cá nhân trên iPhone</div>
-  </header>
+<body><main>
+<header><div class="title">津保川 Tsubogawa Watch</div><div class="sub">関・Seki, Gifu • V2 Timeline</div></header>
 
-  <section class="card">
-    <div class="row">
-      <div>
-        <div class="label">MỰC NƯỚC — 関 (SEKI)</div>
-        <div class="level"><span id="level">--</span> <small>m</small></div>
-      </div>
-      <div class="trend" id="trend">•</div>
-    </div>
-    <div class="updated" id="waterTime">Đang tải dữ liệu…</div>
-    <div class="status" id="status"><span class="dot" id="dot"></span><span id="statusText">Đang kiểm tra</span></div>
+<section class="card">
+ <div class="row"><div><div class="label">MỰC NƯỚC HIỆN TẠI — 関</div><div class="level"><span id="level">--</span> <span class="unit">m</span></div></div><div class="trend" id="trend">•</div></div>
+ <div class="time" id="updated">Đang đọc dữ liệu…</div>
+ <div class="badge"><span class="dot" id="dot"></span><span id="status">Đang kiểm tra</span></div>
+ <div class="grid"><div class="th">Chờ phòng lũ<b>3.0 m</b></div><div class="th">Chú ý lũ<b>4.0 m</b></div><div class="th">Quyết định sơ tán<b>5.7 m</b></div><div class="th">Nguy hiểm ngập lụt<b>5.8 m</b></div></div>
+ <div class="warn" id="loaderr"></div>
+</section>
 
-    <div class="thresholds">
-      <div class="th">水防団待機 / Chờ phòng lũ<b>3.0 m</b></div>
-      <div class="th">氾濫注意 / Chú ý lũ<b>4.0 m</b></div>
-      <div class="th">避難判断 / Sơ tán<b>5.7 m</b></div>
-      <div class="th">氾濫危険 / Nguy hiểm<b>5.8 m</b></div>
-    </div>
-    <div id="waterError" class="error"></div>
-  </section>
+<section class="card">
+ <div class="row"><div class="label">TIMELINE MỰC NƯỚC</div><div class="time" id="count">--</div></div>
+ <div class="tabs"><button class="tab active" data-hours="24">24 GIỜ</button><button class="tab" data-hours="168">7 NGÀY</button><button class="tab" data-hours="720">30 NGÀY</button></div>
+ <div id="chart" class="chartbox"><div class="tip" id="tip"></div></div>
+ <div class="legend"><span style="color:#bd8500">3.0m</span><span style="color:#db601b">4.0m</span><span style="color:#c82d2d">5.7/5.8m</span></div>
+ <div class="small">Chạm/kéo trên đường biểu đồ để xem thời gian và mực nước. 24 giờ đầu được tạo từ lịch sử công khai của Gifu; từ lúc bật GitHub Actions, hệ thống tiếp tục tích lũy dữ liệu 10 phút để 7/30 ngày ngày càng đầy đủ.</div>
+</section>
 
-  <section class="card">
-    <div class="row" style="margin-bottom:10px">
-      <div class="label">CAMERA 津保川・関</div>
-      <div class="updated" id="camTime">--</div>
-    </div>
-    <img id="camera" class="camera" alt="Camera 津保川 関" />
-    <div class="cam-meta" id="camMsg">Đang tìm ảnh camera mới nhất…</div>
-  </section>
+<section class="card">
+ <div class="row" style="margin-bottom:9px"><div class="label">CAMERA 津保川・関 — ẢNH LỚN</div><div class="time" id="camtime">--</div></div>
+ <div class="camera-wrap"><img id="camera" class="camera" alt="Camera 津保川 関"><div class="camnote">Không phóng ảnh vượt quá kích thước nguồn để hạn chế mờ. Camera chính thức không phải video HD livestream; đây là ảnh định kỳ của hệ thống Gifu.</div></div>
+</section>
 
-  <section class="card">
-    <button id="refresh">↻ Làm mới ngay</button>
-    <a class="button secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html" target="_blank" rel="noopener">Mở mực nước chính thức Gifu</a>
-    <a class="button secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Camera513_S.html" target="_blank" rel="noopener">Mở camera chính thức Gifu</a>
-    <button class="secondary install" id="installHelp">Cách thêm vào màn hình iPhone</button>
-    <div class="note">
-      App kiểm tra mỗi 60 giây. Nguồn Gifu thường cập nhật theo mốc 10 phút.
-      Nếu dịch vụ trung gian đọc mực nước bị lỗi, dùng nút “Mở mực nước chính thức Gifu”.
-      Ảnh camera được thử tải trực tiếp từ máy chủ chính thức.
-    </div>
-  </section>
-
-  <footer>Không phải hệ thống cảnh báo khẩn cấp. Khi có thiên tai, hãy ưu tiên thông báo chính thức của chính quyền.</footer>
-</div>
-
+<section class="card">
+ <button id="refresh">↻ Làm mới ngay</button>
+ <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html" target="_blank" rel="noopener">Mực nước chính thức Gifu</a>
+ <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html" target="_blank" rel="noopener">Camera lớn chính thức Gifu</a>
+ <div class="small">App tự kiểm tra dữ liệu mới mỗi 30 giây. GitHub Actions kiểm tra nguồn khoảng mỗi 5 phút; bản thân nguồn mực nước Gifu thường có số mới theo mốc 10 phút.</div>
+</section>
+<footer>Không dùng app này làm nguồn cảnh báo khẩn cấp duy nhất. Khi có thiên tai, ưu tiên thông báo chính thức.</footer>
+</main>
 <script>
-const WATER_URL = 'https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html';
-const proxies = [
-  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  u => 'https://r.jina.ai/' + u
-];
+const $=s=>document.querySelector(s);
+let HISTORY=[], rangeHours=24;
 
-function jstParts(date = new Date()) {
-  const p = new Intl.DateTimeFormat('en-CA', {
-    timeZone:'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit',
-    hour:'2-digit', minute:'2-digit', hour12:false
-  }).formatToParts(date).reduce((a,x)=>(a[x.type]=x.value,a),{});
-  return p;
-}
-function pad(n){ return String(n).padStart(2,'0'); }
-
-async function loadWater(){
-  const err = document.getElementById('waterError');
-  err.textContent = '';
-  for (const make of proxies){
-    try{
-      const r = await fetch(make(WATER_URL), {cache:'no-store'});
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      const t = await r.text();
-
-      // Match newest row in 1-hour history, e.g. 14:30  3.77 ↑
-      let m = t.match(/1時間履歴[\s\S]{0,1000}?(\d{1,2}:\d{2})\s+(-?\d+(?:\.\d+)?)\s*([↑↓→])/);
-      if(!m){
-        // HTML/text alternate
-        m = t.match(/(\d{1,2}:\d{2})\s+(-?\d+(?:\.\d+)?)\s*([↑↓→])/);
-      }
-      const tm = (t.match(/(20\d{2})[\/\-](\d{2})[\/\-](\d{2})\s+(\d{2}:\d{2})/) || []);
-      if(!m) throw new Error('Không tìm thấy số liệu');
-
-      const level = Number(m[2]);
-      document.getElementById('level').textContent = level.toFixed(2).replace(/\.00$/,'').replace(/0$/,'');
-      document.getElementById('trend').textContent = m[3];
-      document.getElementById('waterTime').textContent =
-        tm.length ? `Gifu cập nhật: ${tm[1]}/${tm[2]}/${tm[3]} ${tm[4]}` : `Gifu cập nhật: ${m[1]}`;
-      setStatus(level);
-      return;
-    }catch(e){}
+function rawBase(){
+  if(location.hostname.endsWith('.github.io')){
+    const owner=location.hostname.split('.')[0];
+    const parts=location.pathname.split('/').filter(Boolean);
+    const repo=parts.length ? parts[0] : owner+'.github.io';
+    return `https://raw.githubusercontent.com/${owner}/${repo}/main`;
   }
-  err.textContent = 'Không đọc được số liệu tự động lúc này. Bấm nút mở trang chính thức Gifu bên dưới.';
-  document.getElementById('waterTime').textContent = 'Chưa lấy được dữ liệu';
+  return '.';
 }
-
-function setStatus(x){
-  let text='Bình thường', c='#14854f';
-  if(x >= 5.8){ text='Nguy hiểm ngập lụt'; c='#c92b2b'; }
-  else if(x >= 5.7){ text='Mức quyết định sơ tán'; c='#c92b2b'; }
-  else if(x >= 4.0){ text='Chú ý lũ'; c='#d85c16'; }
-  else if(x >= 3.0){ text='Mức chờ phòng chống lũ'; c='#c48a00'; }
-  document.getElementById('statusText').textContent = text;
-  document.getElementById('dot').style.background = c;
+const BASE=rawBase();
+const bust=()=>`v=${Date.now()}`;
+async function getJSON(path){
+  const r=await fetch(`${BASE}/${path}?${bust()}`,{cache:'no-store'});
+  if(!r.ok) throw Error(r.status);
+  return r.json();
 }
-
-function cameraCandidates(){
-  // Camera updates in 10-minute slots. Start one slot back to allow publishing delay.
-  const out = [];
-  const now = new Date();
-  for(let back=5; back<=95; back+=10){
-    const d = new Date(now.getTime() - back*60000);
-    const p = jstParts(d);
-    let mm = Math.floor(Number(p.minute)/10)*10;
-    const ymd = `${p.year}${p.month}${p.day}`;
-    const stamp = `${ymd}${p.hour}${pad(mm)}00`;
-    out.push({
-      url:`https://www.kasen.pref.gifu.lg.jp/h/cctv_image/513/${ymd}/${stamp}_513_tmb.jpg`,
-      label:`${p.year}/${p.month}/${p.day} ${p.hour}:${pad(mm)}`
-    });
-  }
-  return out;
+function fmtJST(iso){
+  return new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Tokyo',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso));
 }
-
-function loadCamera(){
-  const img = document.getElementById('camera');
-  const msg = document.getElementById('camMsg');
-  const ct = document.getElementById('camTime');
-  const list = cameraCandidates();
-  let i=0;
-  const tryNext=()=>{
-    if(i>=list.length){
-      msg.textContent='Chưa tìm thấy ảnh mới. Hãy mở trang camera chính thức Gifu.';
-      img.removeAttribute('src');
-      ct.textContent='--';
-      return;
-    }
-    const item=list[i++];
-    const test=new Image();
-    test.onload=()=>{
-      img.src=item.url + '?v=' + Date.now();
-      ct.textContent=item.label;
-      msg.textContent='Ảnh mới nhất tìm thấy từ camera chính thức.';
-    };
-    test.onerror=tryNext;
-    test.src=item.url + '?v=' + Date.now();
-  };
-  tryNext();
+function status(level){
+ let t='Bình thường',c='#168552';
+ if(level>=5.8){t='NGUY HIỂM NGẬP LỤT';c='#c82d2d'}
+ else if(level>=5.7){t='MỨC QUYẾT ĐỊNH SƠ TÁN';c='#c82d2d'}
+ else if(level>=4){t='CHÚ Ý LŨ';c='#db601b'}
+ else if(level>=3){t='MỨC CHỜ PHÒNG CHỐNG LŨ';c='#bd8500'}
+ $('#status').textContent=t;$('#dot').style.background=c;
 }
-
-function refresh(){
-  document.getElementById('refresh').textContent='Đang làm mới…';
-  Promise.allSettled([loadWater()]).finally(()=>{
-    setTimeout(()=>document.getElementById('refresh').textContent='↻ Làm mới ngay',500);
-  });
-  loadCamera();
+async function load(){
+ $('#loaderr').textContent='';
+ try{
+  const [l,h,c]=await Promise.all([getJSON('data/latest.json'),getJSON('data/history.json'),getJSON('data/camera.json')]);
+  $('#level').textContent=Number(l.level).toFixed(2);$('#trend').textContent=l.trend||'•';status(Number(l.level));
+  $('#updated').textContent=`Nguồn Gifu: ${fmtJST(l.sourceUpdated)} • kiểm tra: ${fmtJST(l.fetchedAt)}`;
+  HISTORY=h.map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)&&isFinite(x.level)).sort((a,b)=>a.t-b.t);
+  draw();
+  if(c.sourceUpdated) $('#camtime').textContent=fmtJST(c.sourceUpdated);
+  $('#camera').src=`${BASE}/data/camera-latest.jpg?${encodeURIComponent(c.sourceUpdated||Date.now())}`;
+ }catch(e){$('#loaderr').textContent='Chưa lấy được dữ liệu mới từ GitHub. Thử lại sau hoặc mở nguồn Gifu bên dưới.'}
 }
-document.getElementById('refresh').addEventListener('click', refresh);
-document.getElementById('installHelp').addEventListener('click', ()=>{
-  alert('Trên iPhone: mở app bằng Safari → bấm nút Chia sẻ (□↑) → chọn “Add to Home Screen / Thêm vào Màn hình chính”.');
-});
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
-refresh();
-setInterval(refresh, 60000);
-</script>
-</body>
-</html>
+function downsample(a,max=280){
+ if(a.length<=max)return a;
+ const step=(a.length-1)/(max-1),out=[];
+ for(let i=0;i<max;i++) out.push(a[Math.round(i*step)]);
+ return out;
+}
+function draw(){
+ const box=$('#chart'),tip=$('#tip'); box.querySelector('svg')?.remove();
+ if(!HISTORY.length){box.insertAdjacentHTML('beforeend','<div class="small">Chưa có dữ liệu.</div>');return}
+ const newest=HISTORY[HISTORY.length-1].t, cutoff=newest-rangeHours*3600000;
+ let data=HISTORY.filter(x=>x.t>=cutoff); if(!data.length)data=HISTORY.slice(-1);
+ $('#count').textContent=`${data.length} điểm`;
+ const pts=downsample(data), W=600,H=220,L=44,R=12,T=12,B=31;
+ let ymin=Math.min(...pts.map(x=>x.level),3.0)-.15, ymax=Math.max(...pts.map(x=>x.level),5.8)+.15;
+ ymin=Math.floor(ymin*10)/10; ymax=Math.ceil(ymax*10)/10; if(ymax-ymin<1){ymax+=.5;ymin-=.5}
+ const t0=pts[0].t,t1=pts[pts.length-1].t||t0+1;
+ const X=t=>L+(t-t0)/(t1-t0||1)*(W-L-R), Y=v=>T+(ymax-v)/(ymax-ymin)*(H-T-B);
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+ function line(x1,y1,x2,y2,stroke,w=1,dash=''){let e=document.createElementNS(ns,'line');for(const [k,v] of Object.entries({x1,y1,x2,y2,stroke,'stroke-width':w}))e.setAttribute(k,v);if(dash)e.setAttribute('stroke-dasharray',dash);svg.append(e)}
+ function text(x,y,s,anchor='start'){let e=document.createElementNS(ns,'text');e.setAttribute('x',x);e.setAttribute('y',y);e.setAttribute('font-size','11');e.setAttribute('fill','#667b86');e.setAttribute('text-anchor',anchor);e.textContent=s;svg.append(e)}
+ for(let i=0;i<=4;i++){let v=ymin+(ymax-ymin)*i/4,y=Y(v);line(L,y,W-R,y,'#e4edf1');text(L-6,y+4,v.toFixed(1),'end')}
+ [[3,'#bd8500'],[4,'#db601b'],[5.7,'#c82d2d'],[5.8,'#c82d2d']].forEach(([v,c])=>{if(v>=ymin&&v<=ymax)line(L,Y(v),W-R,Y(v),c,1,'5 4')});
+ const path=document.createElementNS(ns,'path');path.setAttribute('fill','none');path.setAttribute('stroke','#075f86');path.setAttribute('stroke-width','3');path.setAttribute('stroke-linejoin','round');path.setAttribute('stroke-linecap','round');path.setAttribute('d',pts.map((p,i)=>`${i?'L':'M'} ${X(p.t).toFixed(1)} ${Y(p.level).toFixed(1)}`).join(' '));svg.append(path);
+ [0,.5,1].forEach(q=>{let i=Math.round((pts.length-1)*q),p=pts[i];text(X(p.t),H-8,fmtJST(p.ts),q===0?'start':q===1?'middle':'end')});
+ const cursor=document.createElementNS(ns,'line');cursor.setAttribute('stroke','#112630');cursor.setAttribute('stroke-width','1');cursor.setAttribute('y1',T);cursor.setAttribute('y2',H-B);cursor.style.display='none';svg.append(cursor);
+ box.prepend(svg);
+ function inspect(ev){
+  const rect=svg.getBoundingClientRect(), px=(ev.clientX-rect.left)/rect.width*W;
+  let target=pts.reduce((best,p)=>Math.abs(X(p.t)-px)<Math.abs(X(best.t)-px)?p:best,pts[0]);
+  let x=X(target.t);cursor.setAttribute('x1',x);cursor.setAttribute('x2',x);cursor.style.display='';
+  tip.style.display='block';tip.innerHTML=`<b>${Number(target.level).toFixed(2)} m ${target.trend||''}</b><br>${fmtJST(target.ts)} JST`;
+ }
+ svg.addEventListener('pointerdown',inspect);svg.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')inspect(e)});
+ svg.addEventListener('pointerleave',()=>{tip.style.display='none';cursor.style.display='none'});
+}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');rangeHours=+b.dataset.hours;draw()});
+$('#refresh').onclick=async()=>{$('#refresh').textContent='Đang làm mới…';await load();setTimeout(()=>$('#refresh').textContent='↻ Làm mới ngay',500)};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+load();setInterval(load,30000);
+</script></body></html>
