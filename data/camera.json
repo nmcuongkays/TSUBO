@@ -1,7 +1,8 @@
 {
   "station": "関",
   "river": "津保川",
-  "sourceUpdated": null,
-  "sourceUrl": null,
+  "sourceUpdated": "2026-09-09T07:30:00+09:00",
+  "fetchedAt": "2026-09-09T07:30:00+09:00",
+  "sourceUrl": "https://www.kasen.pref.gifu.lg.jp/h/cctv_image/513/20260909/20260909073000_513_fenl.jpg",
   "pageUrl": "https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html"
 }

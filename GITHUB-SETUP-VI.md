@@ -48,3 +48,16 @@ Camera lớn: https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html
 ## Lưu ý
 GitHub Actions cho lịch tối thiểu 5 phút, nhưng lịch có thể bị trễ khi hệ thống
 GitHub tải cao. App không thay thế cảnh báo thiên tai chính thức.
+
+## V2.1 - sửa lỗi camera không hiện
+App thử ảnh theo 3 tầng:
+1. `data/camera-latest.jpg` do GitHub Actions lưu.
+2. URL ảnh gốc `_fenl.jpg` được lưu trong `data/camera.json`.
+3. Tự dò các mốc 10 phút gần nhất trên máy chủ camera Gifu.
+
+Vì vậy kể cả file cache GitHub chưa được tạo, app vẫn có cơ hội hiện ảnh trực tiếp.
+
+## V2.2 - Timeline chỉ 24 giờ
+- Đã bỏ lựa chọn 7 ngày và 30 ngày.
+- Biểu đồ luôn hiển thị 24 giờ gần nhất.
+- Dữ liệu nền vẫn được GitHub Actions thu thập để app có đủ điểm cho 24 giờ.

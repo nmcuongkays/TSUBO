@@ -136,6 +136,14 @@ def update_camera():
         full=urllib.parse.urljoin(CAMERA_URL,u)
         if re.search(r"_fenl\.jpe?g(?:\?|$)",full,re.I):
             candidates.append(full)
+
+    # Fallback: some versions of the Gifu page expose the image in markup
+    # that HTMLParser may not capture cleanly. Search the raw HTML too.
+    if not candidates:
+        for u in re.findall(r"""(?:src|href)\s*=\s*["']([^"']+_fenl\.jpe?g[^"']*)["']""", raw, re.I):
+            candidates.append(urllib.parse.urljoin(CAMERA_URL, html.unescape(u)))
+
+    # Last fallback: construct the official path from the page timestamp.
     if not candidates and source_dt:
         stamp=source_dt.strftime("%Y%m%d%H%M00")
         ymd=source_dt.strftime("%Y%m%d")

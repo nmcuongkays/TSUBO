@@ -3,7 +3,7 @@
 PWA cá nhân cho iPhone theo dõi 津保川・関 (Seki, Gifu).
 
 - Mực nước + xu hướng.
-- Timeline 24h / 7d / 30d.
+- Timeline cố định 24 giờ gần nhất.
 - Ngưỡng 3.0 / 4.0 / 5.7 / 5.8 m.
 - Ảnh camera bản lớn `_fenl.jpg`.
 - GitHub Actions tự thu thập và tích lũy lịch sử.

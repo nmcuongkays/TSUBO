@@ -19,7 +19,7 @@ header{padding:8px 3px 13px}.title{font-size:25px;font-weight:850}.sub{color:var
 .card{background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:20px;padding:15px;margin-bottom:13px;box-shadow:0 7px 22px rgba(17,57,74,.07)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}.label{font-size:12px;letter-spacing:.35px;color:var(--muted);font-weight:750}.level{font-size:50px;line-height:1;font-weight:880;letter-spacing:-2px;margin:8px 0}.unit{font-size:20px;letter-spacing:0}.trend{font-size:30px;font-weight:850}.time{font-size:12px;color:var(--muted)}
 .badge{display:inline-flex;align-items:center;gap:7px;margin-top:9px;padding:7px 11px;border-radius:999px;background:#eef2f4;font-size:13px;font-weight:760}.dot{width:9px;height:9px;border-radius:50%;background:#8a9aa2}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#eef4f6;border-radius:12px;padding:4px;margin:11px 0 7px}
+.tabs{display:grid;grid-template-columns:1fr;gap:6px;background:#eef4f6;border-radius:12px;padding:4px;margin:11px 0 7px}
 .tab{border:0;background:transparent;border-radius:9px;padding:9px 5px;font-weight:760;color:#48606c}.tab.active{background:#fff;color:var(--blue);box-shadow:0 1px 5px rgba(0,0,0,.08)}
 .chartbox{position:relative;width:100%;height:230px;touch-action:none;overflow:hidden}.chartbox svg{width:100%;height:100%;display:block}.tip{display:none;position:absolute;pointer-events:none;top:5px;left:8px;background:rgba(17,38,48,.92);color:#fff;border-radius:9px;padding:7px 9px;font-size:12px;line-height:1.35}
 .legend{font-size:11px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-top:5px}.legend span:before{content:"";display:inline-block;width:12px;height:2px;background:currentColor;vertical-align:middle;margin-right:4px}
@@ -29,7 +29,7 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
 </style>
 </head>
 <body><main>
-<header><div class="title">津保川 Tsubogawa Watch</div><div class="sub">関・Seki, Gifu • V2 Timeline</div></header>
+<header><div class="title">津保川 Tsubogawa Watch</div><div class="sub">関・Seki, Gifu • V2.2 • Timeline 24H</div></header>
 
 <section class="card">
  <div class="row"><div><div class="label">MỰC NƯỚC HIỆN TẠI — 関</div><div class="level"><span id="level">--</span> <span class="unit">m</span></div></div><div class="trend" id="trend">•</div></div>
@@ -41,10 +41,10 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
 
 <section class="card">
  <div class="row"><div class="label">TIMELINE MỰC NƯỚC</div><div class="time" id="count">--</div></div>
- <div class="tabs"><button class="tab active" data-hours="24">24 GIỜ</button><button class="tab" data-hours="168">7 NGÀY</button><button class="tab" data-hours="720">30 NGÀY</button></div>
+ <div class="tabs"><button class="tab active" type="button">24 GIỜ GẦN NHẤT</button></div>
  <div id="chart" class="chartbox"><div class="tip" id="tip"></div></div>
  <div class="legend"><span style="color:#bd8500">3.0m</span><span style="color:#db601b">4.0m</span><span style="color:#c82d2d">5.7/5.8m</span></div>
- <div class="small">Chạm/kéo trên đường biểu đồ để xem thời gian và mực nước. 24 giờ đầu được tạo từ lịch sử công khai của Gifu; từ lúc bật GitHub Actions, hệ thống tiếp tục tích lũy dữ liệu 10 phút để 7/30 ngày ngày càng đầy đủ.</div>
+ <div class="small">Chạm/kéo trên đường biểu đồ để xem thời gian và mực nước. Biểu đồ luôn hiển thị 24 giờ gần nhất. GitHub Actions tiếp tục thu thập dữ liệu mới để đường biểu đồ được cập nhật liên tục.</div>
 </section>
 
 <section class="card">
@@ -56,13 +56,13 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
  <button id="refresh">↻ Làm mới ngay</button>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html" target="_blank" rel="noopener">Mực nước chính thức Gifu</a>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html" target="_blank" rel="noopener">Camera lớn chính thức Gifu</a>
- <div class="small">App tự kiểm tra dữ liệu mới mỗi 30 giây. GitHub Actions kiểm tra nguồn khoảng mỗi 5 phút; bản thân nguồn mực nước Gifu thường có số mới theo mốc 10 phút.</div>
+ <div class="small">App tự kiểm tra dữ liệu mới mỗi 30 giây. GitHub Actions kiểm tra nguồn khoảng mỗi 5 phút; biểu đồ chỉ giữ chế độ xem 24 giờ gần nhất.</div>
 </section>
 <footer>Không dùng app này làm nguồn cảnh báo khẩn cấp duy nhất. Khi có thiên tai, ưu tiên thông báo chính thức.</footer>
 </main>
 <script>
 const $=s=>document.querySelector(s);
-let HISTORY=[], rangeHours=24;
+let HISTORY=[]; const rangeHours=24;
 
 function rawBase(){
   if(location.hostname.endsWith('.github.io')){
@@ -100,8 +100,74 @@ async function load(){
   HISTORY=h.map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)&&isFinite(x.level)).sort((a,b)=>a.t-b.t);
   draw();
   if(c.sourceUpdated) $('#camtime').textContent=fmtJST(c.sourceUpdated);
-  $('#camera').src=`${BASE}/data/camera-latest.jpg?${encodeURIComponent(c.sourceUpdated||Date.now())}`;
- }catch(e){$('#loaderr').textContent='Chưa lấy được dữ liệu mới từ GitHub. Thử lại sau hoặc mở nguồn Gifu bên dưới.'}
+  loadCameraSmart(c);
+ }catch(e){
+   $('#loaderr').textContent='Chưa lấy được dữ liệu mới từ GitHub. Thử lại sau hoặc mở nguồn Gifu bên dưới.';
+   loadCameraSmart(null);
+ }
+}
+
+function cameraCandidatesJST(){
+  const out=[];
+  const now=Date.now();
+  // Try recent 10-minute slots for up to 3 hours.
+  for(let back=0; back<=180; back+=10){
+    const d=new Date(now-back*60000);
+    const parts=new Intl.DateTimeFormat('en-CA',{
+      timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',hour12:false
+    }).formatToParts(d).reduce((a,x)=>(a[x.type]=x.value,a),{});
+    const mm=String(Math.floor(Number(parts.minute)/10)*10).padStart(2,'0');
+    const ymd=`${parts.year}${parts.month}${parts.day}`;
+    const stamp=`${ymd}${parts.hour}${mm}00`;
+    out.push({
+      url:`https://www.kasen.pref.gifu.lg.jp/h/cctv_image/513/${ymd}/${stamp}_513_fenl.jpg`,
+      label:`${parts.year}/${parts.month}/${parts.day} ${parts.hour}:${mm}`
+    });
+  }
+  return out;
+}
+
+function loadCameraSmart(c){
+  const img=$('#camera');
+  const queue=[];
+
+  // 1. GitHub-cached image (best for stability / iPhone PWA).
+  queue.push({
+    url:`${BASE}/data/camera-latest.jpg?${encodeURIComponent(c?.sourceUpdated||Date.now())}`,
+    label:c?.sourceUpdated ? fmtJST(c.sourceUpdated) : null
+  });
+
+  // 2. Exact official image URL stored by the GitHub Action.
+  if(c?.sourceUrl){
+    queue.push({
+      url:c.sourceUrl + (c.sourceUrl.includes('?')?'&':'?') + 'v=' + Date.now(),
+      label:c?.sourceUpdated ? fmtJST(c.sourceUpdated) : null
+    });
+  }
+
+  // 3. Directly probe recent official large-image slots.
+  queue.push(...cameraCandidatesJST().map(x=>({
+    url:x.url+'?v='+Date.now(), label:x.label
+  })));
+
+  let i=0;
+  const next=()=>{
+    if(i>=queue.length){
+      img.removeAttribute('src');
+      $('#camtime').textContent='Ảnh chưa tải được';
+      return;
+    }
+    const item=queue[i++];
+    const test=new Image();
+    test.onload=()=>{
+      img.src=item.url;
+      if(item.label) $('#camtime').textContent=item.label;
+    };
+    test.onerror=next;
+    test.src=item.url;
+  };
+  next();
 }
 function downsample(a,max=280){
  if(a.length<=max)return a;
@@ -138,7 +204,6 @@ function draw(){
  svg.addEventListener('pointerdown',inspect);svg.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')inspect(e)});
  svg.addEventListener('pointerleave',()=>{tip.style.display='none';cursor.style.display='none'});
 }
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');rangeHours=+b.dataset.hours;draw()});
 $('#refresh').onclick=async()=>{$('#refresh').textContent='Đang làm mới…';await load();setTimeout(()=>$('#refresh').textContent='↻ Làm mới ngay',500)};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 load();setInterval(load,30000);
