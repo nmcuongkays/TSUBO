@@ -1,0 +1,7 @@
+{
+  "checkedAt": "2026-09-09T15:40:00+09:00",
+  "ok": false,
+  "errors": [
+    "waiting-for-first-github-action-run"
+  ]
+}

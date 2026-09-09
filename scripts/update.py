@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-import json, re, html, urllib.request, urllib.parse
+import json, re, html, urllib.request, urllib.parse, urllib.error
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
+CAMDIR = DATA / "camera"
 DATA.mkdir(exist_ok=True)
+CAMDIR.mkdir(exist_ok=True)
 
 WATER_URL = "https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html"
 CAMERA_URL = "https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html"
 JST = timezone(timedelta(hours=9))
-UA = "Mozilla/5.0 (compatible; TsubogawaWatch/2.0; personal river monitor)"
+UA = "Mozilla/5.0 (compatible; TsubogawaWatch/2.3; personal river monitor)"
 
 class Extractor(HTMLParser):
     def __init__(self):
@@ -31,19 +33,26 @@ class Extractor(HTMLParser):
     def handle_data(self, data):
         self.text.append(data)
 
-def fetch(url, binary=False):
-    req = urllib.request.Request(url, headers={"User-Agent":UA, "Cache-Control":"no-cache"})
-    with urllib.request.urlopen(req, timeout=30) as r:
+def fetch(url, binary=False, timeout=30):
+    req = urllib.request.Request(url, headers={
+        "User-Agent": UA,
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    })
+    with urllib.request.urlopen(req, timeout=timeout) as r:
         b = r.read()
         if binary:
             return b
         charset = r.headers.get_content_charset()
     tried=[]
     for enc in ([charset] if charset else []) + ["utf-8","cp932","shift_jis","euc_jp"]:
-        if not enc or enc in tried: continue
+        if not enc or enc in tried:
+            continue
         tried.append(enc)
-        try: return b.decode(enc)
-        except Exception: pass
+        try:
+            return b.decode(enc)
+        except Exception:
+            pass
     return b.decode("utf-8","replace")
 
 def parse_html(s):
@@ -62,9 +71,11 @@ def infer_dt(source_dt, hhmm):
 
 def section(text, name, next_name=None):
     pos=text.find(name)
-    if pos < 0: return ""
+    if pos < 0:
+        return ""
     end=text.find(next_name,pos+len(name)) if next_name else -1
-    if end < 0: end=len(text)
+    if end < 0:
+        end=len(text)
     return text[pos:end]
 
 def parse_rows(block, source_dt):
@@ -72,18 +83,25 @@ def parse_rows(block, source_dt):
     pat=re.compile(r"(?<!\d)(\d{1,2}:\d{2})\s+(-?\d+(?:\.\d+)?)\s*([↑↓→])")
     for tm,val,tr in pat.findall(block):
         dt=infer_dt(source_dt,tm)
-        rows.append({"ts":dt.isoformat(timespec="seconds"),"level":float(val),"trend":tr,"source":"Gifu"})
+        rows.append({
+            "ts":dt.isoformat(timespec="seconds"),
+            "level":float(val),
+            "trend":tr,
+            "source":"Gifu"
+        })
     return rows
 
 def load_json(path, default):
-    try: return json.loads(path.read_text(encoding="utf-8"))
-    except Exception: return default
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return default
 
 def save_json(path, obj):
     path.write_text(json.dumps(obj,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
 
 def update_water():
-    raw=fetch(WATER_URL)
+    raw=fetch(WATER_URL + "?_=" + str(int(datetime.now(JST).timestamp())))
     text,_=parse_html(raw)
     m=re.search(r"(20\d{2})/(\d{2})/(\d{2})\s+(\d{1,2}):(\d{2})\s*現在",text)
     if not m:
@@ -99,15 +117,19 @@ def update_water():
 
     old=load_json(DATA/"history.json",[])
     by_ts={x["ts"]:x for x in old if isinstance(x,dict) and "ts" in x}
-    for x in rows: by_ts[x["ts"]]=x
+    for x in rows:
+        by_ts[x["ts"]]=x
 
-    cutoff=source_dt-timedelta(days=45)
+    # We only display 24h, but retain 30h to safely span midnight / delayed updates.
+    cutoff=source_dt-timedelta(hours=30)
     merged=[]
     for x in by_ts.values():
         try:
             dt=datetime.fromisoformat(x["ts"])
-            if dt>=cutoff: merged.append(x)
-        except Exception: pass
+            if dt>=cutoff:
+                merged.append(x)
+        except Exception:
+            pass
     merged.sort(key=lambda x:x["ts"])
     save_json(DATA/"history.json",merged)
 
@@ -121,64 +143,142 @@ def update_water():
     }
     save_json(DATA/"latest.json",out)
     print("water",cur["level"],cur["ts"],"points",len(merged))
+    return source_dt
+
+def official_camera_url(dt):
+    # Camera files are published in 10-minute slots.
+    dt=dt.astimezone(JST).replace(second=0,microsecond=0)
+    dt=dt.replace(minute=(dt.minute//10)*10)
+    ymd=dt.strftime("%Y%m%d")
+    stamp=dt.strftime("%Y%m%d%H%M00")
+    return f"https://www.kasen.pref.gifu.lg.jp/h/cctv_image/513/{ymd}/{stamp}_513_fenl.jpg"
+
+def image_filename(dt):
+    dt=dt.astimezone(JST).replace(second=0,microsecond=0)
+    dt=dt.replace(minute=(dt.minute//10)*10)
+    return dt.strftime("%Y%m%d%H%M")+".jpg"
+
+def try_download_camera(dt):
+    url=official_camera_url(dt)
+    fn=image_filename(dt)
+    path=CAMDIR/fn
+    if path.exists() and path.stat().st_size>1000:
+        return {"ts":dt.astimezone(JST).replace(second=0,microsecond=0).isoformat(timespec="seconds"),
+                "path":f"data/camera/{fn}","sourceUrl":url}
+    try:
+        img=fetch(url,binary=True,timeout=12)
+        if len(img)<1000 or not img.startswith(b"\xff\xd8"):
+            return None
+        path.write_bytes(img)
+        return {"ts":dt.astimezone(JST).replace(second=0,microsecond=0).isoformat(timespec="seconds"),
+                "path":f"data/camera/{fn}","sourceUrl":url}
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError):
+        return None
 
 def update_camera():
-    raw=fetch(CAMERA_URL)
+    raw=fetch(CAMERA_URL + "?_=" + str(int(datetime.now(JST).timestamp())))
     text,urls=parse_html(raw)
     tm=re.search(r"(20\d{2})/(\d{2})/(\d{2})\s+(\d{1,2}):(\d{2})\s*現在",text)
-    source_dt=None
-    if tm:
-        y,mo,d,h,mi=map(int,tm.groups())
-        source_dt=datetime(y,mo,d,h,mi,tzinfo=JST)
+    if not tm:
+        raise RuntimeError("Không tìm thấy thời gian camera Gifu")
+    y,mo,d,h,mi=map(int,tm.groups())
+    source_dt=datetime(y,mo,d,h,mi,tzinfo=JST)
 
     candidates=[]
     for u in urls:
         full=urllib.parse.urljoin(CAMERA_URL,u)
         if re.search(r"_fenl\.jpe?g(?:\?|$)",full,re.I):
             candidates.append(full)
-
-    # Fallback: some versions of the Gifu page expose the image in markup
-    # that HTMLParser may not capture cleanly. Search the raw HTML too.
     if not candidates:
         for u in re.findall(r"""(?:src|href)\s*=\s*["']([^"']+_fenl\.jpe?g[^"']*)["']""", raw, re.I):
             candidates.append(urllib.parse.urljoin(CAMERA_URL, html.unescape(u)))
+    img_url=candidates[0] if candidates else official_camera_url(source_dt)
 
-    # Last fallback: construct the official path from the page timestamp.
-    if not candidates and source_dt:
-        stamp=source_dt.strftime("%Y%m%d%H%M00")
-        ymd=source_dt.strftime("%Y%m%d")
-        candidates=[f"https://www.kasen.pref.gifu.lg.jp/h/cctv_image/513/{ymd}/{stamp}_513_fenl.jpg"]
+    # Save the exact latest image from the camera page.
+    img=fetch(img_url,binary=True,timeout=20)
+    if len(img)<1000 or not img.startswith(b"\xff\xd8"):
+        raise RuntimeError("Ảnh camera mới nhất không hợp lệ")
+    latest_name=image_filename(source_dt)
+    (CAMDIR/latest_name).write_bytes(img)
+    (DATA/"camera-latest.jpg").write_bytes(img)
 
-    if not candidates:
-        raise RuntimeError("Không tìm thấy URL ảnh camera lớn")
+    # Build/repair a 24-hour camera archive at times that appear on the water timeline.
+    hist=load_json(DATA/"history.json",[])
+    desired=set()
+    desired.add(source_dt.replace(second=0,microsecond=0,minute=(source_dt.minute//10)*10))
+    cutoff=source_dt-timedelta(hours=24,minutes=20)
+    for x in hist:
+        try:
+            d=datetime.fromisoformat(x["ts"]).astimezone(JST)
+            d=d.replace(second=0,microsecond=0,minute=(d.minute//10)*10)
+            if d>=cutoff:
+                desired.add(d)
+        except Exception:
+            pass
 
-    img_url=candidates[0]
-    prev=load_json(DATA/"camera.json",{})
-    stamp=source_dt.isoformat(timespec="seconds") if source_dt else None
-    image_path=DATA/"camera-latest.jpg"
-    if prev.get("sourceUrl") != img_url or not image_path.exists():
-        img=fetch(img_url,binary=True)
-        if len(img)<1000:
-            raise RuntimeError("Ảnh camera tải về quá nhỏ")
-        image_path.write_bytes(img)
+    # Try only missing desired points (usually <= 30 on first run, then 1 new point).
+    for d in sorted(desired):
+        fn=CAMDIR/image_filename(d)
+        if not fn.exists():
+            try_download_camera(d)
+
+    # Purge images older than 26h to keep the repo small.
+    purge_before=source_dt-timedelta(hours=26)
+    for p in CAMDIR.glob("*.jpg"):
+        try:
+            d=datetime.strptime(p.stem,"%Y%m%d%H%M").replace(tzinfo=JST)
+            if d<purge_before:
+                p.unlink()
+        except Exception:
+            pass
+
+    # Rebuild archive index from actual files.
+    index=[]
+    for p in CAMDIR.glob("*.jpg"):
+        try:
+            d=datetime.strptime(p.stem,"%Y%m%d%H%M").replace(tzinfo=JST)
+            index.append({
+                "ts":d.isoformat(timespec="seconds"),
+                "path":f"data/camera/{p.name}",
+                "sourceUrl":official_camera_url(d)
+            })
+        except Exception:
+            pass
+    index.sort(key=lambda x:x["ts"])
+    save_json(DATA/"camera-history.json",index)
 
     save_json(DATA/"camera.json",{
       "station":"関","river":"津保川",
-      "sourceUpdated":stamp,
+      "sourceUpdated":source_dt.isoformat(timespec="seconds"),
       "fetchedAt":datetime.now(JST).isoformat(timespec="seconds"),
       "sourceUrl":img_url,
-      "pageUrl":CAMERA_URL
+      "path":f"data/camera/{latest_name}",
+      "pageUrl":CAMERA_URL,
+      "archiveCount":len(index)
     })
-    print("camera",stamp,img_url)
+    print("camera",source_dt.isoformat(),"archive",len(index))
+
+def save_health(errors):
+    now=datetime.now(JST)
+    save_json(DATA/"health.json",{
+        "checkedAt":now.isoformat(timespec="seconds"),
+        "ok":len(errors)==0,
+        "errors":errors
+    })
 
 if __name__=="__main__":
     errors=[]
-    try: update_water()
+    try:
+        update_water()
     except Exception as e:
-        print("WATER ERROR:",repr(e)); errors.append("water")
-    try: update_camera()
+        print("WATER ERROR:",repr(e))
+        errors.append("water")
+    try:
+        update_camera()
     except Exception as e:
-        print("CAMERA ERROR:",repr(e)); errors.append("camera")
-    # Keep prior data if one source temporarily fails.
+        print("CAMERA ERROR:",repr(e))
+        errors.append("camera")
+    save_health(errors)
+    # Do not erase good previous data on a transient source failure.
     if len(errors)==2:
         raise SystemExit(1)

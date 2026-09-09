@@ -1,12 +1,14 @@
-# Tsubogawa Watch V2
+# Tsubogawa Watch V2.4 — LIVE FIX
 
-PWA cá nhân cho iPhone theo dõi 津保川・関 (Seki, Gifu).
+Sửa lỗi app đứng ở dữ liệu cũ.
 
-- Mực nước + xu hướng.
-- Timeline cố định 24 giờ gần nhất.
-- Ngưỡng 3.0 / 4.0 / 5.7 / 5.8 m.
-- Ảnh camera bản lớn `_fenl.jpg`.
-- GitHub Actions tự thu thập và tích lũy lịch sử.
-- Không cần domain, Xcode hay API key Gifu.
+- Timeline 24 giờ.
+- Chạm timeline để xem ảnh camera gần thời điểm đã chọn.
+- GitHub Actions tiếp tục lưu lịch sử + camera.
+- Collector Gifu có cache-busting.
+- Nếu `data/latest.json` cũ hơn ~12 phút, PWA tự thử đọc trang Gifu qua nguồn CORS dự phòng.
+- App so sánh timestamp và luôn ưu tiên dữ liệu mới hơn.
+- Điểm 10 phút mới đọc trực tiếp được ghép ngay vào timeline.
+- Nút VỀ REALTIME cho camera.
 
-Xem `GITHUB-SETUP-VI.md` để cài.
+Không dùng app như nguồn cảnh báo thiên tai duy nhất.

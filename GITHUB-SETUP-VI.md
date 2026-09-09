@@ -1,63 +1,37 @@
-# CÀI Tsubogawa Watch V2 LÊN GITHUB PAGES
+# CẬP NHẬT V2.4 — SỬA LỖI ĐỨNG DỮ LIỆU
 
-## 1. Tạo repository
-Tạo repo PUBLIC, ví dụ: `tsubogawa-watch`.
+## Vì sao bản trước có thể đứng?
+Có hai lớp có thể chậm:
+1. GitHub Actions có thể chạy trễ.
+2. Yêu cầu tới trang Gifu có thể nhận bản cache cũ.
 
-## 2. Upload
-Giải nén ZIP này và upload TOÀN BỘ nội dung vào nhánh `main`.
-Phải có cả thư mục `.github/workflows/`.
+## V2.4 sửa thế nào?
+- Script GitHub thêm cache-busting khi gọi Gifu.
+- PWA vẫn đọc dữ liệu GitHub trước.
+- Nếu timestamp mực nước cũ hơn khoảng 12 phút, PWA tự thử đọc trang Gifu qua
+  dịch vụ CORS dự phòng.
+- App so sánh timestamp và chỉ lấy bản mới hơn.
+- Ví dụ GitHub đang 15:10 nhưng nguồn dự phòng đọc được 15:40 thì màn hình đổi
+  ngay sang 15:40 và ghép 15:20/15:30/15:40 vào timeline.
 
-## 3. Cho phép bot ghi dữ liệu
-GitHub repo -> Settings -> Actions -> General -> Workflow permissions
-chọn **Read and write permissions** -> Save.
+## Cách cập nhật
+1. Giải nén ZIP.
+2. Upload đè toàn bộ lên repo cũ, gồm `.github/workflows/update.yml`.
+3. Commit.
+4. Actions -> Update Tsubogawa data -> Run workflow.
+5. Mở GitHub Pages bằng Safari và refresh.
+6. Nếu PWA Home Screen vẫn giữ bản cũ, xóa icon rồi Add to Home Screen lại.
 
-## 4. Chạy lần đầu
-Vào tab **Actions** -> `Update Tsubogawa data` -> `Run workflow`.
-Sau khi chạy xong, thư mục `data/` sẽ có ảnh camera mới nhất và số liệu mới.
+## Quyền Actions
+Settings -> Actions -> General -> Workflow permissions ->
+`Read and write permissions`.
 
-## 5. Bật GitHub Pages
-Settings -> Pages -> Build and deployment:
-- Source: Deploy from a branch
-- Branch: main
-- Folder: /(root)
--> Save.
+## Dấu hiệu hoạt động đúng
+Màn hình sẽ hiện một trong hai:
+- `✓ GitHub hoạt động ...`
+- `✓ ĐANG DÙNG NGUỒN LIVE Gifu ... GitHub đang chậm`
 
-Link thường là:
-`https://TEN-CUA-BAN.github.io/tsubogawa-watch/`
-
-## 6. Cài trên iPhone
-Mở link bằng Safari -> Share -> Add to Home Screen.
-
-## Timeline hoạt động thế nào?
-- File ban đầu có khoảng 24 giờ lịch sử từ trang công khai Gifu.
-- GitHub Actions kiểm tra mỗi 5 phút.
-- Nguồn Gifu thường phát mực nước mới theo mốc 10 phút.
-- Mỗi số mới được giữ trong `data/history.json`.
-- App có 24 giờ / 7 ngày / 30 ngày.
-- Sau khi chạy, timeline 7/30 ngày sẽ tự đầy dần. Hệ thống giữ 45 ngày.
-
-## Camera
-V2 lấy ảnh `_fenl.jpg` từ trang camera lớn của Gifu và lưu thành
-`data/camera-latest.jpg`. Giao diện giới hạn ảnh ở 320 px để tránh kéo giãn
-nguồn camera vốn có độ phân giải thấp.
-
-## Nguồn chính thức
-Mực nước: https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html
-Camera lớn: https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html
-
-## Lưu ý
-GitHub Actions cho lịch tối thiểu 5 phút, nhưng lịch có thể bị trễ khi hệ thống
-GitHub tải cao. App không thay thế cảnh báo thiên tai chính thức.
-
-## V2.1 - sửa lỗi camera không hiện
-App thử ảnh theo 3 tầng:
-1. `data/camera-latest.jpg` do GitHub Actions lưu.
-2. URL ảnh gốc `_fenl.jpg` được lưu trong `data/camera.json`.
-3. Tự dò các mốc 10 phút gần nhất trên máy chủ camera Gifu.
-
-Vì vậy kể cả file cache GitHub chưa được tạo, app vẫn có cơ hội hiện ảnh trực tiếp.
-
-## V2.2 - Timeline chỉ 24 giờ
-- Đã bỏ lựa chọn 7 ngày và 30 ngày.
-- Biểu đồ luôn hiển thị 24 giờ gần nhất.
-- Dữ liệu nền vẫn được GitHub Actions thu thập để app có đủ điểm cho 24 giờ.
+Và dòng trên cùng hiện riêng:
+- timestamp dữ liệu Gifu,
+- timestamp GitHub lấy,
+- giờ app vừa kiểm tra.
