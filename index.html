@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Tsubogawa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Tsubogawa Watch V2.6</title>
+<title>Tsubogawa Watch V2.8</title>
 <style>
 :root{--bg:#edf6f9;--card:#fff;--ink:#112630;--muted:#667b86;--line:#d8e7ed;--blue:#075f86;--green:#168552;--yellow:#bd8500;--orange:#db601b;--red:#c82d2d}
 *{box-sizing:border-box}
@@ -30,7 +30,11 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
 </style>
 </head>
 <body><main>
-<header><div class="title">津保川 Tsubogawa Watch</div><div class="sub">関・Seki, Gifu • V2.6 • Force Live Refresh</div></header>
+<header>
+  <div class="title">津保川 Tsubogawa Watch</div>
+  <div class="sub">関・Seki, Gifu • V2.8 • Top Refresh</div>
+  <button id="topRefresh" style="margin-top:12px">↻ CẬP NHẬT NGAY</button>
+</header>
 
 <section class="card">
  <div class="row">
@@ -67,7 +71,7 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
  <button id="refresh">↻ Kiểm tra dữ liệu mới ngay</button>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html" target="_blank" rel="noopener">Mực nước chính thức Gifu</a>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html" target="_blank" rel="noopener">Camera chính thức Gifu</a>
- <div class="small">iPhone kiểm tra mỗi 20 giây. Nếu timestamp GitHub cũ hơn 6 phút, app thử LIVE Gifu. Nút Làm mới luôn ép đọc LIVE Gifu ngay, không chờ GitHub.</div>
+ <div class="small">Reload sẽ hiện dữ liệu GitHub/cache trước, sau đó kiểm tra LIVE Gifu ở nền. Mỗi nguồn có timeout ngắn nên không còn giữ màn hình trắng/đơ lâu.</div>
 </section>
 <footer>Không dùng app này làm nguồn cảnh báo khẩn cấp duy nhất. Khi có thiên tai, ưu tiên thông báo chính thức.</footer>
 </main>
@@ -89,15 +93,33 @@ function rawBase(){
 }
 const BASE=rawBase();
 const bust=()=>`v=${Date.now()}`;
-async function getJSON(path, optional=false){
-  try{
-    const r=await fetch(`${BASE}/${path}?${bust()}`,{cache:'no-store'});
-    if(!r.ok) throw Error(r.status);
-    return await r.json();
-  }catch(e){
-    if(optional) return null;
-    throw e;
+
+function withTimeout(promise, ms=2500){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),ms))
+  ]);
+}
+async function fetchJSONFast(path, optional=false){
+  const urls=[];
+  // Same-origin GitHub Pages first: usually fastest on reload.
+  urls.push(`./${path}?${bust()}`);
+  // Raw GitHub is useful if Pages deployment is lagging behind the latest commit.
+  if(BASE!=='.') urls.push(`${BASE}/${path}?${bust()}`);
+
+  for(const url of urls){
+    try{
+      const r=await withTimeout(fetch(url,{cache:'no-store'}),2200);
+      if(!r.ok) throw Error(r.status);
+      return await withTimeout(r.json(),1200);
+    }catch(e){}
   }
+  if(optional) return null;
+  throw new Error('Không tải được '+path);
+}
+
+async function getJSON(path, optional=false){
+  return fetchJSONFast(path, optional);
 }
 function fmtJST(iso){
   if(!iso) return '--';
@@ -178,7 +200,6 @@ function parseGifuPageText(text){
   };
 }
 async function fetchFreshGifu(force=false){
-  // Automatic checks are throttled, but a manual refresh must ALWAYS probe Gifu now.
   if(!force && Date.now()-lastDirectAttempt<55000) return DIRECT_CACHE;
   lastDirectAttempt=Date.now();
 
@@ -187,11 +208,14 @@ async function fetchFreshGifu(force=false){
     'https://api.allorigins.win/raw?url=' + encodeURIComponent(target),
     'https://r.jina.ai/' + target
   ];
+
+  // Never let LIVE fallback freeze the first render.
   for(const u of urls){
     try{
-      const r=await fetch(u,{cache:'no-store'});
+      const r=await withTimeout(fetch(u,{cache:'no-store'}),2600);
       if(!r.ok) continue;
-      const parsed=parseGifuPageText(await r.text());
+      const text=await withTimeout(r.text(),1200);
+      const parsed=parseGifuPageText(text);
       if(parsed){
         if(!DIRECT_CACHE || new Date(parsed.latest.sourceUpdated)>new Date(DIRECT_CACHE.latest.sourceUpdated)){
           DIRECT_CACHE=parsed;
@@ -242,10 +266,9 @@ function updateFreshness(latest, health){
   }
 }
 
-async function load(forceLive=false){
- $('#loaderr').textContent='';
- try{
-  let [ghLatest,ghHistory,c,ch,health]=await Promise.all([
+async function renderBaseData(){
+  $('#loaderr').textContent='';
+  const [ghLatest,ghHistory,c,ch,health]=await Promise.all([
     getJSON('data/latest.json'),
     getJSON('data/history.json'),
     getJSON('data/camera.json',true),
@@ -253,51 +276,67 @@ async function load(forceLive=false){
     getJSON('data/health.json',true)
   ]);
 
-  // If GitHub/source timestamp is stale, independently query the public Gifu page.
-  // This prevents the screen freezing on an old GitHub commit or cached upstream response.
-  let direct=DIRECT_CACHE;
-  // Manual refresh: ALWAYS query Gifu.
-  // Automatic refresh: query Gifu once GitHub's source timestamp is >6 min old.
-  // Since Gifu publishes on 10-minute slots, this catches a new slot quickly.
-  if(forceLive || ageMinutes(ghLatest?.sourceUpdated)>6){
-    direct=await fetchFreshGifu(forceLive);
-  }
+  $('#level').textContent=Number(ghLatest.level).toFixed(2);
+  $('#trend').textContent=ghLatest.trend||'•';
+  setStatus(Number(ghLatest.level));
+  $('#updated').textContent=`GitHub/Gifu: ${fmtJST(ghLatest.sourceUpdated)} • GitHub lấy: ${fmtJST(ghLatest.fetchedAt)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
+  updateFreshness(ghLatest,health);
 
-  const chosen=newerLatest(ghLatest,direct?.latest);
-  const merged=mergeHistory(ghHistory,direct?.rows);
-
-  $('#level').textContent=Number(chosen.level).toFixed(2);
-  $('#trend').textContent=chosen.trend||'•';
-  setStatus(Number(chosen.level));
-
-  const sourceName=chosen.liveFallback?'LIVE Gifu':'GitHub/Gifu';
-  $('#updated').textContent=`${sourceName}: ${fmtJST(chosen.sourceUpdated)} • GitHub lấy: ${fmtJST(ghLatest?.fetchedAt)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
-  updateFreshness(chosen,health);
-
-  HISTORY=merged.map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)&&isFinite(x.level)).sort((a,b)=>a.t-b.t);
+  HISTORY=(ghHistory||[]).map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)&&isFinite(x.level)).sort((a,b)=>a.t-b.t);
   CAMERAS=(ch||[]).map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
   CAMERA_META=c||null;
   draw();
 
-  if(selectedTs===null) showLatestCamera();
-  else showCameraAt(selectedTs);
- }catch(e){
-   // GitHub itself failed: still try the live public source before giving up.
-   const direct=await fetchFreshGifu(forceLive);
-   if(direct?.latest){
-     const l=direct.latest;
-     $('#level').textContent=Number(l.level).toFixed(2);
-     $('#trend').textContent=l.trend||'•';
-     setStatus(Number(l.level));
-     $('#updated').textContent=`LIVE Gifu: ${fmtJST(l.sourceUpdated)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
-     updateFreshness(l,null);
-     HISTORY=mergeHistory(HISTORY,direct.rows).map(x=>({...x,t:new Date(x.ts).getTime()})).sort((a,b)=>a.t-b.t);
-     draw();
-   }else{
-     $('#loaderr').textContent='Không đọc được GitHub lẫn nguồn dự phòng. Hãy mở trang Gifu chính thức bên dưới.';
-   }
-   showLatestCamera();
- }
+  // Do not block the water-level UI on camera image probing.
+  setTimeout(()=>{ if(selectedTs===null) showLatestCamera(); else showCameraAt(selectedTs); },0);
+  return {ghLatest, health};
+}
+
+async function applyLiveIfNewer(ghLatest, forceLive=false){
+  if(!forceLive && ageMinutes(ghLatest?.sourceUpdated)<=6) return;
+  const direct=await fetchFreshGifu(forceLive);
+  if(!direct?.latest) return;
+
+  const chosen=newerLatest(ghLatest,direct.latest);
+  if(chosen!==direct.latest) return;
+
+  $('#level').textContent=Number(chosen.level).toFixed(2);
+  $('#trend').textContent=chosen.trend||'•';
+  setStatus(Number(chosen.level));
+  $('#updated').textContent=`LIVE Gifu: ${fmtJST(chosen.sourceUpdated)} • GitHub lấy: ${fmtJST(ghLatest?.fetchedAt)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
+  updateFreshness(chosen,null);
+  HISTORY=mergeHistory(HISTORY,direct.rows).map(x=>({...x,t:new Date(x.ts).getTime()})).sort((a,b)=>a.t-b.t);
+  draw();
+}
+
+async function load(forceLive=false){
+  let base=null;
+  try{
+    // FIRST PAINT: show GitHub/cache data immediately.
+    base=await renderBaseData();
+  }catch(e){
+    $('#loaderr').textContent='Dữ liệu GitHub tải chậm. Đang thử nguồn LIVE…';
+  }
+
+  // SECOND PHASE: live refresh happens after the screen is already usable.
+  try{
+    if(base?.ghLatest){
+      await applyLiveIfNewer(base.ghLatest, forceLive);
+    }else{
+      const direct=await fetchFreshGifu(true);
+      if(direct?.latest){
+        const l=direct.latest;
+        $('#level').textContent=Number(l.level).toFixed(2);
+        $('#trend').textContent=l.trend||'•';
+        setStatus(Number(l.level));
+        $('#updated').textContent=`LIVE Gifu: ${fmtJST(l.sourceUpdated)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
+        updateFreshness(l,null);
+        HISTORY=mergeHistory(HISTORY,direct.rows).map(x=>({...x,t:new Date(x.ts).getTime()})).sort((a,b)=>a.t-b.t);
+        draw();
+        $('#loaderr').textContent='';
+      }
+    }
+  }catch(e){}
 }
 
 function officialCameraUrl(ts){
@@ -457,14 +496,21 @@ function draw(){
 }
 
 $('#liveCam').onclick=showLatestCamera;
-$('#refresh').onclick=async()=>{
-  $('#refresh').textContent='Đang ép đọc LIVE Gifu…';
-  // Clear the previous direct-cache so a stale live response cannot win.
+async function forceRefresh(button){
+  const original=button.textContent;
+  button.disabled=true;
+  button.textContent='Đang cập nhật LIVE…';
   DIRECT_CACHE=null;
   lastDirectAttempt=0;
   await load(true);
-  setTimeout(()=>$('#refresh').textContent='↻ Kiểm tra dữ liệu mới ngay',700);
-};
+  button.textContent='✓ ĐÃ CẬP NHẬT';
+  setTimeout(()=>{
+    button.textContent=original;
+    button.disabled=false;
+  },900);
+}
+$('#refresh').onclick=()=>forceRefresh($('#refresh'));
+$('#topRefresh').onclick=()=>forceRefresh($('#topRefresh'));
 if('serviceWorker'in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 load();
 setInterval(load,20000);
