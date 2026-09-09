@@ -1,11 +1,11 @@
-# Tsubogawa Watch V2.9 — INSTANT LAST GOOD
+# Tsubogawa Watch V3.0 — NEWEST WINS
 
-Sửa hiện tượng vừa mở app thấy dữ liệu GitHub cũ + lỗi giả
-`waiting-for-first-github-action-run`, rồi một lúc sau mới nhảy sang LIVE.
+Sửa lỗi dữ liệu GitHub cũ ghi đè dữ liệu tốt mới hơn trên iPhone.
 
-V2.9:
-- Không còn seed health ở trạng thái lỗi.
-- Mỗi khi app thấy dữ liệu mới tốt (GitHub hoặc LIVE), nó lưu vào localStorage trên iPhone.
-- Lần mở sau, dữ liệu tốt gần nhất hiện ngay lập tức.
-- Sau đó app mới kiểm tra GitHub/LIVE ở nền và cập nhật nếu có mốc mới.
-- Giữ nút CẬP NHẬT NGAY ở đầu trang.
+Nguyên tắc mới:
+1. So timestamp iPhone last-good và GitHub.
+2. Hiển thị bản mới hơn ngay.
+3. Không bao giờ lưu bản cũ hơn đè lên last-good.
+4. Sau đó mới kiểm tra LIVE Gifu.
+5. Nếu LIVE mới hơn, LIVE thắng và được lưu lại.
+6. Không còn flash cảnh báo `Số GitHub đang cũ 60 phút` ngay lúc mở app.

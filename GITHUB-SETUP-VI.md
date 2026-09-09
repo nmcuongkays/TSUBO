@@ -1,15 +1,15 @@
-# V2.9 — MỞ APP HIỆN DỮ LIỆU TỐT NGAY
+# V3.0 — SỬA TRIỆT ĐỂ CẢNH BÁO GITHUB CŨ
 
-## Vì sao bản cũ hiện 'Số GitHub đang cũ ... waiting-for-first-github-action-run'?
-Trong ZIP cũ có file health mẫu mang trạng thái lỗi, và latest.json có thể là dữ liệu
-seed cũ. App vẽ hai file đó trước, rồi vài giây sau mới đọc LIVE.
+## Lỗi V2.9
+V2.9 có last-good, nhưng khi app tải xong `latest.json` từ GitHub cũ,
+nó lại gọi `saveLastGood(ghLatest)` và có thể ghi đè last-good mới hơn.
 
-## V2.9
-- Xóa lỗi mẫu khỏi health.json.
-- Lưu dữ liệu tốt gần nhất trên chính iPhone.
-- Mở app lần sau: hiện dữ liệu tốt gần nhất ngay.
-- Kiểm tra LIVE Gifu chạy sau ở nền.
+## V3.0
+- Last-good chỉ được cập nhật nếu timestamp mới hơn hoặc bằng bản đang lưu.
+- Mở app: so sánh iPhone và GitHub, bản mới hơn thắng.
+- Sau đó kiểm tra LIVE Gifu.
+- Không hiện cảnh báo GitHub cũ ngay lúc mở; chỉ hiển thị trạng thái đồng bộ.
 
 ## Cập nhật
-Upload đè ZIP lên repo -> Commit -> chờ Pages deploy -> refresh Safari.
-Nếu PWA vẫn giữ code cũ, xóa icon Home Screen rồi Add to Home Screen lại.
+Upload đè toàn bộ ZIP -> Commit -> chờ Pages deploy.
+Nếu PWA vẫn giữ JS cũ: xóa icon Home Screen rồi Add to Home Screen lại.

@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Tsubogawa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Tsubogawa Watch V2.9</title>
+<title>Tsubogawa Watch V3.0</title>
 <style>
 :root{--bg:#edf6f9;--card:#fff;--ink:#112630;--muted:#667b86;--line:#d8e7ed;--blue:#075f86;--green:#168552;--yellow:#bd8500;--orange:#db601b;--red:#c82d2d}
 *{box-sizing:border-box}
@@ -32,7 +32,7 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
 <body><main>
 <header>
   <div class="title">津保川 Tsubogawa Watch</div>
-  <div class="sub">関・Seki, Gifu • V2.9 • Instant Last Good</div>
+  <div class="sub">関・Seki, Gifu • V3.0 • Newest Wins</div>
   <button id="topRefresh" style="margin-top:12px">↻ CẬP NHẬT NGAY</button>
 </header>
 
@@ -71,7 +71,7 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
  <button id="refresh">↻ Kiểm tra dữ liệu mới ngay</button>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html" target="_blank" rel="noopener">Mực nước chính thức Gifu</a>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html" target="_blank" rel="noopener">Camera chính thức Gifu</a>
- <div class="small">Mở app sẽ hiện ngay dữ liệu tốt gần nhất đã lưu trên iPhone, sau đó kiểm tra LIVE Gifu ở nền. Không còn hiện trạng thái mẫu “waiting-for-first-github-action-run”.</div>
+ <div class="small">Mở app sẽ ưu tiên dữ liệu mới nhất giữa iPhone và GitHub, rồi kiểm tra LIVE Gifu. Dữ liệu cũ hơn không được phép ghi đè dữ liệu mới hơn.</div>
 </section>
 <footer>Không dùng app này làm nguồn cảnh báo khẩn cấp duy nhất. Khi có thiên tai, ưu tiên thông báo chính thức.</footer>
 </main>
@@ -97,6 +97,15 @@ const bust=()=>`v=${Date.now()}`;
 const LAST_GOOD_KEY='tsubogawa-last-good-v1';
 function saveLastGood(latest, rows){
   try{
+    if(!latest?.sourceUpdated) return;
+    const current=getLastGood();
+    if(current?.latest?.sourceUpdated){
+      const oldTs=new Date(current.latest.sourceUpdated).getTime();
+      const newTs=new Date(latest.sourceUpdated).getTime();
+      if(isFinite(oldTs) && isFinite(newTs) && newTs<oldTs){
+        return; // Never downgrade the iPhone's best-known data.
+      }
+    }
     localStorage.setItem(LAST_GOOD_KEY,JSON.stringify({
       latest,
       rows:(rows||[]).slice(-180),
@@ -111,6 +120,19 @@ function getLastGood(){
     return x;
   }catch(e){ return null; }
 }
+
+function bestLocalVsGithub(ghLatest, ghHistory){
+  const local=getLastGood();
+  if(!local?.latest?.sourceUpdated) return {latest:ghLatest, rows:ghHistory||[], source:'github'};
+  if(!ghLatest?.sourceUpdated) return {latest:local.latest, rows:local.rows||[], source:'iphone'};
+  const localTs=new Date(local.latest.sourceUpdated).getTime();
+  const ghTs=new Date(ghLatest.sourceUpdated).getTime();
+  if(isFinite(localTs) && isFinite(ghTs) && localTs>ghTs){
+    return {latest:local.latest, rows:mergeHistory(ghHistory||[],local.rows||[]), source:'iphone'};
+  }
+  return {latest:ghLatest, rows:mergeHistory(local.rows||[],ghHistory||[]), source:'github'};
+}
+
 function renderInstantLastGood(){
   const x=getLastGood();
   if(!x) return false;
@@ -311,39 +333,69 @@ async function renderBaseData(){
     getJSON('data/health.json',true)
   ]);
 
-  $('#level').textContent=Number(ghLatest.level).toFixed(2);
-  $('#trend').textContent=ghLatest.trend||'•';
-  setStatus(Number(ghLatest.level));
-  $('#updated').textContent=`GitHub/Gifu: ${fmtJST(ghLatest.sourceUpdated)} • GitHub lấy: ${fmtJST(ghLatest.fetchedAt)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
-  updateFreshness(ghLatest,health);
+  const best=bestLocalVsGithub(ghLatest,ghHistory);
+  const shown=best.latest;
 
-  HISTORY=(ghHistory||[]).map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)&&isFinite(x.level)).sort((a,b)=>a.t-b.t);
-  saveLastGood(ghLatest, ghHistory||[]);
-  CAMERAS=(ch||[]).map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
+  $('#level').textContent=Number(shown.level).toFixed(2);
+  $('#trend').textContent=shown.trend||'•';
+  setStatus(Number(shown.level));
+
+  if(best.source==='iphone'){
+    $('#updated').textContent=`iPhone last-good: ${fmtJST(shown.sourceUpdated)} • GitHub: ${fmtJST(ghLatest?.sourceUpdated)} • đang đồng bộ LIVE…`;
+    $('#fresh').className='fresh';
+    $('#fresh').textContent='Đang kiểm tra dữ liệu mới từ Gifu…';
+  }else{
+    $('#updated').textContent=`GitHub/Gifu: ${fmtJST(shown.sourceUpdated)} • GitHub lấy: ${fmtJST(ghLatest?.fetchedAt)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
+    // Do not flash a stale-warning immediately on first paint.
+    $('#fresh').className='fresh';
+    $('#fresh').textContent='Đang kiểm tra dữ liệu mới từ Gifu…';
+  }
+
+  HISTORY=(best.rows||[]).map(x=>({...x,t:new Date(x.ts).getTime()}))
+    .filter(x=>isFinite(x.t)&&isFinite(x.level)).sort((a,b)=>a.t-b.t);
+
+  // Save only if this is not older than what the iPhone already knows.
+  saveLastGood(shown,best.rows||[]);
+
+  CAMERAS=(ch||[]).map(x=>({...x,t:new Date(x.ts).getTime()}))
+    .filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
   CAMERA_META=c||null;
   draw();
 
-  // Do not block the water-level UI on camera image probing.
   setTimeout(()=>{ if(selectedTs===null) showLatestCamera(); else showCameraAt(selectedTs); },0);
-  return {ghLatest, health};
+  return {ghLatest, shownLatest:shown, source:best.source, health};
 }
 
-async function applyLiveIfNewer(ghLatest, forceLive=false){
-  if(!forceLive && ageMinutes(ghLatest?.sourceUpdated)<=6) return;
+async function applyLiveIfNewer(baseLatest, forceLive=false){
+  if(!forceLive && ageMinutes(baseLatest?.sourceUpdated)<=6){
+    $('#fresh').className='fresh';
+    $('#fresh').textContent=`✓ Dữ liệu gần nhất: ${fmtJST(baseLatest.sourceUpdated)} • đang theo dõi`;
+    return;
+  }
+
   const direct=await fetchFreshGifu(forceLive);
-  if(!direct?.latest) return;
+  if(!direct?.latest){
+    $('#fresh').className='fresh';
+    $('#fresh').textContent=`Đang dùng dữ liệu gần nhất ${fmtJST(baseLatest?.sourceUpdated)} • chưa lấy được LIVE mới`;
+    return;
+  }
 
-  const chosen=newerLatest(ghLatest,direct.latest);
-  if(chosen!==direct.latest) return;
+  const chosen=newerLatest(baseLatest,direct.latest);
 
-  $('#level').textContent=Number(chosen.level).toFixed(2);
-  $('#trend').textContent=chosen.trend||'•';
-  setStatus(Number(chosen.level));
-  $('#updated').textContent=`LIVE Gifu: ${fmtJST(chosen.sourceUpdated)} • GitHub lấy: ${fmtJST(ghLatest?.fetchedAt)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
-  updateFreshness(chosen,null);
-  HISTORY=mergeHistory(HISTORY,direct.rows).map(x=>({...x,t:new Date(x.ts).getTime()})).sort((a,b)=>a.t-b.t);
-  saveLastGood(chosen, HISTORY.map(({t,...x})=>x));
-  draw();
+  if(chosen===direct.latest){
+    $('#level').textContent=Number(chosen.level).toFixed(2);
+    $('#trend').textContent=chosen.trend||'•';
+    setStatus(Number(chosen.level));
+    $('#updated').textContent=`LIVE Gifu: ${fmtJST(chosen.sourceUpdated)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
+    $('#fresh').className='fresh';
+    $('#fresh').textContent=`✓ LIVE Gifu • mốc ${fmtJST(chosen.sourceUpdated)}`;
+    HISTORY=mergeHistory(HISTORY,direct.rows).map(x=>({...x,t:new Date(x.ts).getTime()})).sort((a,b)=>a.t-b.t);
+    saveLastGood(chosen, HISTORY.map(({t,...x})=>x));
+    draw();
+  }else{
+    $('#fresh').className='fresh';
+    $('#fresh').textContent=`✓ Đang dùng dữ liệu mới nhất đã biết • ${fmtJST(baseLatest.sourceUpdated)}`;
+  }
 }
 
 async function load(forceLive=false){
@@ -357,8 +409,8 @@ async function load(forceLive=false){
 
   // SECOND PHASE: live refresh happens after the screen is already usable.
   try{
-    if(base?.ghLatest){
-      await applyLiveIfNewer(base.ghLatest, forceLive);
+    if(base?.shownLatest){
+      await applyLiveIfNewer(base.shownLatest, forceLive);
     }else{
       const direct=await fetchFreshGifu(true);
       if(direct?.latest){
