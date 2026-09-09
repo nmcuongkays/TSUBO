@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Tsubogawa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Tsubogawa Watch V2.8</title>
+<title>Tsubogawa Watch V2.9</title>
 <style>
 :root{--bg:#edf6f9;--card:#fff;--ink:#112630;--muted:#667b86;--line:#d8e7ed;--blue:#075f86;--green:#168552;--yellow:#bd8500;--orange:#db601b;--red:#c82d2d}
 *{box-sizing:border-box}
@@ -32,7 +32,7 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
 <body><main>
 <header>
   <div class="title">津保川 Tsubogawa Watch</div>
-  <div class="sub">関・Seki, Gifu • V2.8 • Top Refresh</div>
+  <div class="sub">関・Seki, Gifu • V2.9 • Instant Last Good</div>
   <button id="topRefresh" style="margin-top:12px">↻ CẬP NHẬT NGAY</button>
 </header>
 
@@ -71,7 +71,7 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
  <button id="refresh">↻ Kiểm tra dữ liệu mới ngay</button>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html" target="_blank" rel="noopener">Mực nước chính thức Gifu</a>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html" target="_blank" rel="noopener">Camera chính thức Gifu</a>
- <div class="small">Reload sẽ hiện dữ liệu GitHub/cache trước, sau đó kiểm tra LIVE Gifu ở nền. Mỗi nguồn có timeout ngắn nên không còn giữ màn hình trắng/đơ lâu.</div>
+ <div class="small">Mở app sẽ hiện ngay dữ liệu tốt gần nhất đã lưu trên iPhone, sau đó kiểm tra LIVE Gifu ở nền. Không còn hiện trạng thái mẫu “waiting-for-first-github-action-run”.</div>
 </section>
 <footer>Không dùng app này làm nguồn cảnh báo khẩn cấp duy nhất. Khi có thiên tai, ưu tiên thông báo chính thức.</footer>
 </main>
@@ -93,6 +93,40 @@ function rawBase(){
 }
 const BASE=rawBase();
 const bust=()=>`v=${Date.now()}`;
+
+const LAST_GOOD_KEY='tsubogawa-last-good-v1';
+function saveLastGood(latest, rows){
+  try{
+    localStorage.setItem(LAST_GOOD_KEY,JSON.stringify({
+      latest,
+      rows:(rows||[]).slice(-180),
+      savedAt:new Date().toISOString()
+    }));
+  }catch(e){}
+}
+function getLastGood(){
+  try{
+    const x=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'null');
+    if(!x?.latest?.sourceUpdated) return null;
+    return x;
+  }catch(e){ return null; }
+}
+function renderInstantLastGood(){
+  const x=getLastGood();
+  if(!x) return false;
+  const l=x.latest;
+  $('#level').textContent=Number(l.level).toFixed(2);
+  $('#trend').textContent=l.trend||'•';
+  setStatus(Number(l.level));
+  $('#updated').textContent=`Lần cập nhật tốt gần nhất: ${fmtJST(l.sourceUpdated)} • đang kiểm tra dữ liệu mới…`;
+  $('#fresh').className='fresh';
+  $('#fresh').textContent='Đang kiểm tra Gifu…';
+  HISTORY=(x.rows||[]).map(v=>({...v,t:new Date(v.ts).getTime()}))
+    .filter(v=>isFinite(v.t)&&isFinite(v.level)).sort((a,b)=>a.t-b.t);
+  if(HISTORY.length) draw();
+  return true;
+}
+
 
 function withTimeout(promise, ms=2500){
   return Promise.race([
@@ -262,7 +296,8 @@ function updateFreshness(latest, health){
     el.textContent=`⚠ GitHub chưa lấy dữ liệu mới khoảng ${Math.round(botAge)} phút • app đang thử nguồn dự phòng`;
   }
   if(health && health.ok===false && health.errors?.length){
-    el.textContent += ` • lỗi bot: ${health.errors.join(', ')}`;
+    const realErrors=health.errors.filter(x=>x && x!=='waiting-for-first-github-action-run');
+    if(realErrors.length) el.textContent += ` • lỗi bot: ${realErrors.join(', ')}`;
   }
 }
 
@@ -283,6 +318,7 @@ async function renderBaseData(){
   updateFreshness(ghLatest,health);
 
   HISTORY=(ghHistory||[]).map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)&&isFinite(x.level)).sort((a,b)=>a.t-b.t);
+  saveLastGood(ghLatest, ghHistory||[]);
   CAMERAS=(ch||[]).map(x=>({...x,t:new Date(x.ts).getTime()})).filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
   CAMERA_META=c||null;
   draw();
@@ -306,6 +342,7 @@ async function applyLiveIfNewer(ghLatest, forceLive=false){
   $('#updated').textContent=`LIVE Gifu: ${fmtJST(chosen.sourceUpdated)} • GitHub lấy: ${fmtJST(ghLatest?.fetchedAt)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
   updateFreshness(chosen,null);
   HISTORY=mergeHistory(HISTORY,direct.rows).map(x=>({...x,t:new Date(x.ts).getTime()})).sort((a,b)=>a.t-b.t);
+  saveLastGood(chosen, HISTORY.map(({t,...x})=>x));
   draw();
 }
 
@@ -332,6 +369,7 @@ async function load(forceLive=false){
         $('#updated').textContent=`LIVE Gifu: ${fmtJST(l.sourceUpdated)} • App: ${new Intl.DateTimeFormat('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
         updateFreshness(l,null);
         HISTORY=mergeHistory(HISTORY,direct.rows).map(x=>({...x,t:new Date(x.ts).getTime()})).sort((a,b)=>a.t-b.t);
+        saveLastGood(l, HISTORY.map(({t,...x})=>x));
         draw();
         $('#loaderr').textContent='';
       }
@@ -512,6 +550,7 @@ async function forceRefresh(button){
 $('#refresh').onclick=()=>forceRefresh($('#refresh'));
 $('#topRefresh').onclick=()=>forceRefresh($('#topRefresh'));
 if('serviceWorker'in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+renderInstantLastGood();
 load();
 setInterval(load,20000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});

@@ -1,7 +1,11 @@
-# Tsubogawa Watch V2.8 — TOP REFRESH
+# Tsubogawa Watch V2.9 — INSTANT LAST GOOD
 
-Thêm nút `↻ CẬP NHẬT NGAY` ở đầu trang.
+Sửa hiện tượng vừa mở app thấy dữ liệu GitHub cũ + lỗi giả
+`waiting-for-first-github-action-run`, rồi một lúc sau mới nhảy sang LIVE.
 
-- Nút đầu trang và nút cuối trang dùng cùng cơ chế ép đọc LIVE Gifu.
-- Khi bấm, app xóa live-cache cũ, đọc lại nguồn mới và cập nhật timeline.
-- Giữ nguyên Fast Load, camera timeline và nút VỀ REALTIME.
+V2.9:
+- Không còn seed health ở trạng thái lỗi.
+- Mỗi khi app thấy dữ liệu mới tốt (GitHub hoặc LIVE), nó lưu vào localStorage trên iPhone.
+- Lần mở sau, dữ liệu tốt gần nhất hiện ngay lập tức.
+- Sau đó app mới kiểm tra GitHub/LIVE ở nền và cập nhật nếu có mốc mới.
+- Giữ nút CẬP NHẬT NGAY ở đầu trang.

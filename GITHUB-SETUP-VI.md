@@ -1,15 +1,15 @@
-# V2.7 — SỬA RELOAD BỊ ĐƠ
+# V2.9 — MỞ APP HIỆN DỮ LIỆU TỐT NGAY
+
+## Vì sao bản cũ hiện 'Số GitHub đang cũ ... waiting-for-first-github-action-run'?
+Trong ZIP cũ có file health mẫu mang trạng thái lỗi, và latest.json có thể là dữ liệu
+seed cũ. App vẽ hai file đó trước, rồi vài giây sau mới đọc LIVE.
+
+## V2.9
+- Xóa lỗi mẫu khỏi health.json.
+- Lưu dữ liệu tốt gần nhất trên chính iPhone.
+- Mở app lần sau: hiện dữ liệu tốt gần nhất ngay.
+- Kiểm tra LIVE Gifu chạy sau ở nền.
 
 ## Cập nhật
-1. Upload đè toàn bộ ZIP lên repo.
-2. Commit.
-3. Chờ GitHub Pages deploy xong.
-4. Mở Safari và reload.
-5. Nếu PWA cũ vẫn đơ, xóa icon Home Screen rồi Add to Home Screen lại.
-
-## Cách hoạt động mới
-- Reload -> đọc data GitHub Pages nhanh -> vẽ màn hình ngay.
-- Sau đó mới kiểm tra LIVE Gifu.
-- Nếu LIVE mới hơn, số và timeline tự nhảy.
-- Camera tải riêng, không khóa giao diện.
-- Request LIVE/proxy có timeout; nguồn chậm sẽ bị bỏ qua thay vì treo app.
+Upload đè ZIP lên repo -> Commit -> chờ Pages deploy -> refresh Safari.
+Nếu PWA vẫn giữ code cũ, xóa icon Home Screen rồi Add to Home Screen lại.
