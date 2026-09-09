@@ -1,14 +1,13 @@
-# Tsubogawa Watch V2.4 — LIVE FIX
+# Tsubogawa Watch V2.6 — FORCE LIVE REFRESH
 
-Sửa lỗi app đứng ở dữ liệu cũ.
+Sửa lỗi web Gifu đã có mốc mới nhưng bấm Làm mới trong app vẫn giữ mốc cũ.
 
-- Timeline 24 giờ.
-- Chạm timeline để xem ảnh camera gần thời điểm đã chọn.
-- GitHub Actions tiếp tục lưu lịch sử + camera.
-- Collector Gifu có cache-busting.
-- Nếu `data/latest.json` cũ hơn ~12 phút, PWA tự thử đọc trang Gifu qua nguồn CORS dự phòng.
-- App so sánh timestamp và luôn ưu tiên dữ liệu mới hơn.
-- Điểm 10 phút mới đọc trực tiếp được ghép ngay vào timeline.
-- Nút VỀ REALTIME cho camera.
+Nguyên nhân V2.5:
+- App chỉ gọi nguồn LIVE khi timestamp GitHub cũ hơn ~12 phút.
+- Nếu GitHub = 15:40 và Gifu = 15:50 thì chênh chỉ 10 phút, nên app chưa gọi LIVE.
 
-Không dùng app như nguồn cảnh báo thiên tai duy nhất.
+V2.6:
+- Nút `Kiểm tra dữ liệu mới ngay` luôn ép đọc LIVE Gifu.
+- Xóa direct-cache cũ trước khi refresh thủ công.
+- Auto refresh thử LIVE Gifu sớm hơn: khi timestamp GitHub cũ hơn 6 phút.
+- Luôn so sánh timestamp và chỉ dùng bản mới hơn.

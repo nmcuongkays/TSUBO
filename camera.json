@@ -1,0 +1,10 @@
+{
+  "station": "関",
+  "river": "津保川",
+  "sourceUpdated": null,
+  "fetchedAt": null,
+  "sourceUrl": null,
+  "pageUrl": "https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html",
+  "path": null,
+  "note": "Run GitHub Action once to populate current camera metadata."
+}

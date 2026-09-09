@@ -1,0 +1,15 @@
+{
+  "station": "関",
+  "river": "津保川",
+  "level": 3.98,
+  "trend": "↑",
+  "sourceUpdated": "2026-09-09T15:10:00+09:00",
+  "fetchedAt": "2026-09-09T15:10:00+09:00",
+  "thresholds": {
+    "standby": 3.0,
+    "attention": 4.0,
+    "evacuation": 5.7,
+    "danger": 5.8
+  },
+  "sourceUrl": "https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html"
+}

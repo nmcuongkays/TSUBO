@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Tsubogawa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Tsubogawa Watch V2.4</title>
+<title>Tsubogawa Watch V2.6</title>
 <style>
 :root{--bg:#edf6f9;--card:#fff;--ink:#112630;--muted:#667b86;--line:#d8e7ed;--blue:#075f86;--green:#168552;--yellow:#bd8500;--orange:#db601b;--red:#c82d2d}
 *{box-sizing:border-box}
@@ -30,7 +30,7 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
 </style>
 </head>
 <body><main>
-<header><div class="title">津保川 Tsubogawa Watch</div><div class="sub">関・Seki, Gifu • V2.4 • Live Fix</div></header>
+<header><div class="title">津保川 Tsubogawa Watch</div><div class="sub">関・Seki, Gifu • V2.6 • Force Live Refresh</div></header>
 
 <section class="card">
  <div class="row">
@@ -67,7 +67,7 @@ button,.btn{border:0;border-radius:13px;padding:12px 14px;background:var(--blue)
  <button id="refresh">↻ Kiểm tra dữ liệu mới ngay</button>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Valley_6_450.html" target="_blank" rel="noopener">Mực nước chính thức Gifu</a>
  <a class="btn secondary" href="https://www.kasen.pref.gifu.lg.jp/h/Camera513_B.html" target="_blank" rel="noopener">Camera chính thức Gifu</a>
- <div class="small">iPhone kiểm tra mỗi 20 giây. Nếu dữ liệu GitHub cũ hơn khoảng 12 phút, app tự chuyển sang đọc trang Gifu qua nguồn dự phòng và chỉ nhận timestamp mới hơn.</div>
+ <div class="small">iPhone kiểm tra mỗi 20 giây. Nếu timestamp GitHub cũ hơn 6 phút, app thử LIVE Gifu. Nút Làm mới luôn ép đọc LIVE Gifu ngay, không chờ GitHub.</div>
 </section>
 <footer>Không dùng app này làm nguồn cảnh báo khẩn cấp duy nhất. Khi có thiên tai, ưu tiên thông báo chính thức.</footer>
 </main>
@@ -177,9 +177,9 @@ function parseGifuPageText(text){
     rows
   };
 }
-async function fetchFreshGifu(){
-  // Only probe the live page about once per minute while GitHub data is stale.
-  if(Date.now()-lastDirectAttempt<55000) return DIRECT_CACHE;
+async function fetchFreshGifu(force=false){
+  // Automatic checks are throttled, but a manual refresh must ALWAYS probe Gifu now.
+  if(!force && Date.now()-lastDirectAttempt<55000) return DIRECT_CACHE;
   lastDirectAttempt=Date.now();
 
   const target=WATER_URL + '?_=' + Date.now();
@@ -242,7 +242,7 @@ function updateFreshness(latest, health){
   }
 }
 
-async function load(){
+async function load(forceLive=false){
  $('#loaderr').textContent='';
  try{
   let [ghLatest,ghHistory,c,ch,health]=await Promise.all([
@@ -256,8 +256,11 @@ async function load(){
   // If GitHub/source timestamp is stale, independently query the public Gifu page.
   // This prevents the screen freezing on an old GitHub commit or cached upstream response.
   let direct=DIRECT_CACHE;
-  if(ageMinutes(ghLatest?.sourceUpdated)>12){
-    direct=await fetchFreshGifu();
+  // Manual refresh: ALWAYS query Gifu.
+  // Automatic refresh: query Gifu once GitHub's source timestamp is >6 min old.
+  // Since Gifu publishes on 10-minute slots, this catches a new slot quickly.
+  if(forceLive || ageMinutes(ghLatest?.sourceUpdated)>6){
+    direct=await fetchFreshGifu(forceLive);
   }
 
   const chosen=newerLatest(ghLatest,direct?.latest);
@@ -280,7 +283,7 @@ async function load(){
   else showCameraAt(selectedTs);
  }catch(e){
    // GitHub itself failed: still try the live public source before giving up.
-   const direct=await fetchFreshGifu();
+   const direct=await fetchFreshGifu(forceLive);
    if(direct?.latest){
      const l=direct.latest;
      $('#level').textContent=Number(l.level).toFixed(2);
@@ -331,9 +334,13 @@ function tryImageQueue(queue, selectedLabel, isHistorical){
     probe.onload=()=>{
       img.src=item.url;
       sel.textContent=item.label||selectedLabel;
-      note.textContent=isHistorical
-        ? `Ảnh gần nhất với điểm timeline đã chọn${item.delta!=null ? ` • lệch ${item.delta} phút` : ''}.`
-        : 'Ảnh camera mới nhất tìm được.';
+      if(isHistorical){
+        note.textContent=`Ảnh gần nhất với điểm timeline đã chọn${item.delta!=null ? ` • lệch ${item.delta} phút` : ''}.`;
+      }else if(item.realtimeProbe){
+        note.textContent=`Ảnh realtime mới nhất tìm được từ Gifu${item.delta ? ` • lùi ${item.delta} phút so với giờ hiện tại` : ''}.`;
+      }else{
+        note.textContent='Không dò được ảnh Gifu mới, đang dùng ảnh cache gần nhất.';
+      }
     };
     probe.onerror=next;
     probe.src=item.url;
@@ -343,14 +350,43 @@ function tryImageQueue(queue, selectedLabel, isHistorical){
 function showLatestCamera(){
   selectedTs=null;
   const q=[];
-  if(CAMERA_META?.path) q.push({url:`${BASE}/${CAMERA_META.path}?${bust()}`,label:`REALTIME • ${fmtJST(CAMERA_META.sourceUpdated)}`,delta:0});
-  q.push({url:`${BASE}/data/camera-latest.jpg?${bust()}`,label:`REALTIME • ${fmtJST(CAMERA_META?.sourceUpdated)}`,delta:0});
-  if(CAMERA_META?.sourceUrl) q.push({url:CAMERA_META.sourceUrl+'?'+bust(),label:`REALTIME • ${fmtJST(CAMERA_META.sourceUpdated)}`,delta:0});
-  // direct recent official slots
-  for(let m=0;m<=60;m+=10){
+
+  // REALTIME FIX:
+  // Always probe the newest official Gifu 10-minute slots FIRST.
+  // Start slightly behind "now" because the newest image can take a few minutes
+  // to be published. Try up to 2 hours back.
+  for(let m=0;m<=120;m+=10){
     const x=officialCameraUrl(Date.now()-m*60000);
-    q.push({url:x.url+'?'+bust(),label:`REALTIME • ${x.label}`,delta:m});
+    q.push({
+      url:x.url+'?'+bust(),
+      label:`REALTIME • ${x.label}`,
+      delta:m,
+      realtimeProbe:true
+    });
   }
+
+  // Only after probing recent official slots, use GitHub-cached metadata/image.
+  // This prevents a stale camera.json (for example 07:30) from winning.
+  if(CAMERA_META?.path){
+    q.push({
+      url:`${BASE}/${CAMERA_META.path}?${bust()}`,
+      label:`CACHE • ${fmtJST(CAMERA_META.sourceUpdated)}`,
+      delta:null
+    });
+  }
+  q.push({
+    url:`${BASE}/data/camera-latest.jpg?${bust()}`,
+    label:`CACHE • ${fmtJST(CAMERA_META?.sourceUpdated)}`,
+    delta:null
+  });
+  if(CAMERA_META?.sourceUrl){
+    q.push({
+      url:CAMERA_META.sourceUrl+'?'+bust(),
+      label:`CACHE • ${fmtJST(CAMERA_META.sourceUpdated)}`,
+      delta:null
+    });
+  }
+
   tryImageQueue(q,'REALTIME',false);
 }
 function showCameraAt(ts){
@@ -422,9 +458,12 @@ function draw(){
 
 $('#liveCam').onclick=showLatestCamera;
 $('#refresh').onclick=async()=>{
-  $('#refresh').textContent='Đang kiểm tra…';
-  await load();
-  setTimeout(()=>$('#refresh').textContent='↻ Kiểm tra dữ liệu mới ngay',500);
+  $('#refresh').textContent='Đang ép đọc LIVE Gifu…';
+  // Clear the previous direct-cache so a stale live response cannot win.
+  DIRECT_CACHE=null;
+  lastDirectAttempt=0;
+  await load(true);
+  setTimeout(()=>$('#refresh').textContent='↻ Kiểm tra dữ liệu mới ngay',700);
 };
 if('serviceWorker'in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 load();
